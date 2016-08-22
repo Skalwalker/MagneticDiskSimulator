@@ -1,46 +1,58 @@
 /*
-	Titulo:
-	Disciplina: Organização de Arquivos – Turma C 
+	Titulo: Simulacao de Disco Magnetico
+	Disciplina: Organização de Arquivos – Turma C
 	Semestre: 2/2016
 	Prof.: Andre Drummond
-	
+
 	Alunos:
 	- Renato Nobre 15/0146696
 	- Khalil Carsten 15/0134495
 
 	Resumo da disposicao e organizacao do codigo:
-	
+
 
 */
 #include <stdio.h>
 
 
-typedef struct block{ 
-	unsigned char bytes_s[512]; 
-}block; 
+typedef struct block{
+	unsigned char bytes_s[512];
+}block;
 
-typedef struct sector_array{ 
+typedef struct sector_array{
 	block sector[60];
 }sector_array;
 
-typedef struct track_array{ 
+typedef struct track_array{
 	sector_array track[5];
 }track_array;
 
-typedef struct fatlist_s{ 
-	char file_name[100]; 
-	unsigned int first_sector; 
+typedef struct fatlist_s{
+	char file_name[100];
+	unsigned int first_sector;
 }fatlist;
 
-typedef struct fatent_s{ 
-	unsigned int used; 
-	unsigned int eof; 
+typedef struct fatent_s{
+	unsigned int used;
+	unsigned int eof;
 	unsigned int next;
 }fatent;
 
 int menu(){
-	
+
+	const int TRILHA_CILINDRO  = 5;
+	const int SETORES_TRILHA = 60;
+	const int TRILHA_SUPERF = 10;
+	const int TAM_SETOR = 512;
+	const int TAM_CLUSTER = 4;
+	const int SEEK_T_MEDIO = 4;
+	const int SEEK_T_MINIMO = 1;
+	const int T_MEDIO_LAT = 6;
+	const int TEMPO_TRANSF = 12;
+
 	int escolha;
+
+
 	printf("\n1 - Escrever Arquivo\n");
 	printf("2 - Ler Arquivo\n");
 	printf("3 - Apagar Arquivo\n");
@@ -53,27 +65,27 @@ int menu(){
 		printf(">>> ");
 		scanf("%d", &escolha);
 	}
-	
+
 	return escolha;
 }
 
 
 int main(){
-	
+
 	int opc;
 	track_array *cylinder;
-	
+
 	opc = menu();
-	
+
 	if(opc == 1){
 		
 	}else if(opc == 2){
-		
+
 	}else if(opc == 3){
-	
+
 	}else if(opc == 4){
-		
+
 	}
-	
+
 	return 0;
 }
