@@ -40,11 +40,11 @@ typedef struct fatent_s{
 
 int menu(){
 
-	const int TRILHA_CILINDRO  = 5;
-	const int SETORES_TRILHA = 60;
-	const int TRILHA_SUPERF = 10;
-	const int TAM_SETOR = 512;
-	const int TAM_CLUSTER = 4;
+	const int TRILHA_CILINDRO  = 5; // 5 trilhas/cilindro
+	const int SETORES_TRILHA = 60; // 60 setores/trilha
+	const int TRILHA_SUPERF = 10; // 10 trilhas/superficie
+	const int TAM_SETOR = 512; // 512 bytes/cluster
+	const int TAM_CLUSTER = 4; // 4 setores/cluster
 	const int SEEK_T_MEDIO = 4;
 	const int SEEK_T_MINIMO = 1;
 	const int T_MEDIO_LAT = 6;
@@ -69,16 +69,34 @@ int menu(){
 	return escolha;
 }
 
+int sizeOfFile(FILE *fp){ // Retorna o tamanho do arquivo em bytes
+	/* Observação: o 'size' sempre
+	   tera alguns bytes a mais devido ao
+	   '\n' ao final do arquivo e das linhas.*/
+	int size;
+
+	fseek(fp, 0, SEEK_END); // Leva o ponteiro para o final do arquivo
+	size = ftell(fp); // Retorna a posição do ponteiro dentro do arquivo
+	return size;
+}
 
 int main(){
 
 	int opc;
+	int fpSize;
+	char fileName[100];
+	FILE *fp;
 	track_array *cylinder;
 
 	opc = menu();
 
 	if(opc == 1){
-		
+		printf("Por favor, escreva o nome do arquivo: ");
+		scanf(" %s", fileName);
+		fp = fopen(fileName, "r");
+		fpSize = sizeOfFile(fp);
+		printf("Tamanho do Arquivo digitado: %d\n bytes", fpSize);
+
 	}else if(opc == 2){
 
 	}else if(opc == 3){
