@@ -13,42 +13,58 @@
 
 */
 #include <stdio.h>
+#include <stdlib.h>
 
 
+#define CLUSTER 4
+#define TRILHA_SUPERF  10
+#define SEEK_T_MEDIO 4
+#define SEEK_T_MINIMO 1
+#define T_MEDIO_LAT 6
+#define TEMPO_TRANSF 12
+#define TRUE 1
+#define FALSE 0
+
+
+/*
+	Bloco
+	 TAM_SETOR = 512
+*/
 typedef struct block{
 	unsigned char bytes_s[512];
 }block;
 
+/*
+	Setor
+	SETORES_TRILHA = 60 setor/trilha
+*/
 typedef struct sector_array{
 	block sector[60];
 }sector_array;
 
+/*
+	Trilha
+	TRILHA_CILINDRO  = 5 trilha/cilindro
+*/
 typedef struct track_array{
 	sector_array track[5];
 }track_array;
 
+/* Tabela FAT */
 typedef struct fatlist_s{
 	char file_name[100];
 	unsigned int first_sector;
 }fatlist;
 
+/* QUE PORRA E ESSA KHALIL! */
 typedef struct fatent_s{
 	unsigned int used;
 	unsigned int eof;
 	unsigned int next;
 }fatent;
 
-int menu(){
 
-	const int TRILHA_CILINDRO  = 5; // 5 trilhas/cilindro
-	const int SETORES_TRILHA = 60; // 60 setores/trilha
-	const int TRILHA_SUPERF = 10; // 10 trilhas/superficie
-	const int TAM_SETOR = 512; // 512 bytes/cluster
-	const int TAM_CLUSTER = 4; // 4 setores/cluster
-	const int SEEK_T_MEDIO = 4;
-	const int SEEK_T_MINIMO = 1;
-	const int T_MEDIO_LAT = 6;
-	const int TEMPO_TRANSF = 12;
+int menu(){
 
 	int escolha;
 
@@ -69,33 +85,45 @@ int menu(){
 	return escolha;
 }
 
-int sizeOfFile(FILE *fp){ // Retorna o tamanho do arquivo em bytes
+int sizeOfFile(FILE *fp){ /* Retorna o tamanho do arquivo em bytes */
 	/* Observação: o 'size' sempre
 	   tera alguns bytes a mais devido ao
 	   '\n' ao final do arquivo e das linhas.*/
 	int size;
 
-	fseek(fp, 0, SEEK_END); // Leva o ponteiro para o final do arquivo
-	size = ftell(fp); // Retorna a posição do ponteiro dentro do arquivo
+	fseek(fp, 0, SEEK_END); /* Leva o ponteiro para o final do arquivo */
+	size = ftell(fp); /* Retorna a posição do ponteiro dentro do arquivo */
 	return size;
 }
+
+void escreverArquivo(track_array *cylinder, char fileName[], int , FILE *fp){
+	int fpSize, cluster_needed;
+
+
+	fp = fopen(fileName, "r");
+	fpSize = sizeOfFile(fp);
+	printf("Tamanho do Arquivo digitado: %d\n bytes", fpSize);
+	cluster_needed = ceil(fpSize / (CLUSTER * 512));
+
+
+
+}
+
 
 int main(){
 
 	int opc;
-	int fpSize;
 	char fileName[100];
+	const int CLUSTER = 4;
 	FILE *fp;
-	track_array *cylinder;
+	track_array *cylinder = (track_array*)malloc(10 * sizeof(track_array));
+
 
 	opc = menu();
 
 	if(opc == 1){
 		printf("Por favor, escreva o nome do arquivo: ");
 		scanf(" %s", fileName);
-		fp = fopen(fileName, "r");
-		fpSize = sizeOfFile(fp);
-		printf("Tamanho do Arquivo digitado: %d\n bytes", fpSize);
 
 	}else if(opc == 2){
 
