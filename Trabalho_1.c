@@ -25,7 +25,7 @@
 #define TEMPO_TRANSF 12
 #define TRUE 1
 #define FALSE 0
-
+FILE *fp;
 
 /*
 	Bloco
@@ -86,7 +86,7 @@ int menu(){
 	return escolha;
 }
 
-int sizeOfFile(FILE *fp){ /* Retorna o tamanho do arquivo em bytes */
+int sizeOfFile(){ /* Retorna o tamanho do arquivo em bytes */
 	/* Observação: o 'size' sempre
 	   tera alguns bytes a mais devido ao
 	   '\n' ao final do arquivo e das linhas.*/
@@ -97,24 +97,39 @@ int sizeOfFile(FILE *fp){ /* Retorna o tamanho do arquivo em bytes */
 	return size;
 }
 
-void escreverArquivo(track_array *cylinder, char fileName[], FILE *fp){
+void dividirArquivo(char file_name[], double cluster_needed){
+	char atual;
+	int i;
+
+	fp = fopen(file_name, "r");
+	for(i=0;i<512;i++){
+		atual = fgetc(fp);
+		printf("%c", atual);
+	}
+	fclose(fp);
+
+}
+
+
+void escreverArquivo(track_array *cylinder, char file_name[]){
 	double fp_size;
 	double cluster_needed;
 
-	fp = fopen(fileName, "r");
-	fp_size = sizeOfFile(fp);
+	fp = fopen(file_name, "r");
+	fp_size = sizeOfFile();
 	printf("Tamanho do Arquivo digitado: %.0lf bytes\n", fp_size);
 	cluster_needed = ceil(fp_size / (CLUSTER * 512));
 	printf("O arquivo necessitará de %.0lf clusters\n", cluster_needed);
-
+	fclose(fp);
+	dividirArquivo(file_name, cluster_needed);
 }
+
 
 
 int main(){
 
 	int opc;
 	char file_name[100];
-	FILE *fp;
 	track_array *cylinder = (track_array*)malloc(10 * sizeof(track_array));
 
 
@@ -123,7 +138,7 @@ int main(){
 	if(opc == 1){
 		printf("Por favor, escreva o nome do arquivo: ");
 		scanf(" %s", file_name);
-		escreverArquivo(cylinder, file_name, fp);
+		escreverArquivo(cylinder, file_name);
 
 	}else if(opc == 2){
 
