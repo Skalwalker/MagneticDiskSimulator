@@ -97,13 +97,13 @@ int sizeOfFile(FILE *fp){ /* Retorna o tamanho do arquivo em bytes */
 }
 
 void escreverArquivo(track_array *cylinder, char fileName[], int , FILE *fp){
-	int fpSize, cluster_needed;
+	int fp_size, cluster_needed;
 
 
 	fp = fopen(fileName, "r");
-	fpSize = sizeOfFile(fp);
-	printf("Tamanho do Arquivo digitado: %d\n bytes", fpSize);
-	cluster_needed = ceil(fpSize / (CLUSTER * 512));
+	fp_size = sizeOfFile(fp);
+	printf("Tamanho do Arquivo digitado: %d\n bytes", fp_size);
+	cluster_needed = ceil(fp_size / (CLUSTER * 512));
 
 
 
