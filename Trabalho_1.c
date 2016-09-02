@@ -14,6 +14,7 @@
 */
 #include <stdio.h>
 #include <stdlib.h>
+#include <math.h>
 
 
 #define CLUSTER 4
@@ -96,16 +97,15 @@ int sizeOfFile(FILE *fp){ /* Retorna o tamanho do arquivo em bytes */
 	return size;
 }
 
-void escreverArquivo(track_array *cylinder, char fileName[], int , FILE *fp){
-	int fp_size, cluster_needed;
-
+void escreverArquivo(track_array *cylinder, char fileName[], FILE *fp){
+	double fp_size;
+	double cluster_needed;
 
 	fp = fopen(fileName, "r");
 	fp_size = sizeOfFile(fp);
-	printf("Tamanho do Arquivo digitado: %d\n bytes", fp_size);
+	printf("Tamanho do Arquivo digitado: %.0lf bytes\n", fp_size);
 	cluster_needed = ceil(fp_size / (CLUSTER * 512));
-
-
+	printf("O arquivo necessitará de %.0lf clusters\n", cluster_needed);
 
 }
 
@@ -113,8 +113,7 @@ void escreverArquivo(track_array *cylinder, char fileName[], int , FILE *fp){
 int main(){
 
 	int opc;
-	char fileName[100];
-	const int CLUSTER = 4;
+	char file_name[100];
 	FILE *fp;
 	track_array *cylinder = (track_array*)malloc(10 * sizeof(track_array));
 
@@ -123,7 +122,8 @@ int main(){
 
 	if(opc == 1){
 		printf("Por favor, escreva o nome do arquivo: ");
-		scanf(" %s", fileName);
+		scanf(" %s", file_name);
+		escreverArquivo(cylinder, file_name, fp);
 
 	}else if(opc == 2){
 
