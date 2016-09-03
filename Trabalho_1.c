@@ -14,6 +14,7 @@
 */
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <math.h>
 
 
@@ -51,6 +52,7 @@ typedef struct track_array{
 	sector_array track[5];
 }track_array;
 
+
 /* Tabela FAT */
 typedef struct fatlist_s{
 	char file_name[100];
@@ -64,6 +66,33 @@ typedef struct fatent_s{
 	unsigned int next;
 }fatent;
 
+void createFatList(int sector, int track, fatlist **fat_list, char file_name[]){
+	// fatlist *new_fatlist = (fatlist*)malloc(sizeof(fatlist));
+	fat_list = malloc(sizeof(fatlist*)*2);
+
+	strcpy(fat_list[sector]->file_name, file_name);
+	fat_list[sector]->first_sector = (track * 60) + sector;
+
+	strcpy("teste2.txt", fat_list[1]->file_name);
+	fat_list[1]->first_sector = 50;
+
+	printf("File %s\n", fat_list[0]->file_name);
+	printf("File %s\n", fat_list[1]->file_name);
+
+
+}
+
+//
+// void createFatEnt(int sector, fatent fat_ent){
+//
+// 	fatent *new_fatent = (fatent*)malloc(sizeof(fatent));
+//
+// 	new_fatent->used = TRUE;
+// 	new_fatent
+//
+// 	fat_ent[sector] = new_fatent;
+//
+// }
 
 int menu(){
 
@@ -86,6 +115,7 @@ int menu(){
 	return escolha;
 }
 
+
 int sizeOfFile(){ /* Retorna o tamanho do arquivo em bytes */
 	/* Observação: o 'size' sempre
 	   tera alguns bytes a mais devido ao
@@ -102,16 +132,22 @@ void dividirArquivo(char file_name[], double cluster_needed){
 	int i;
 
 	fp = fopen(file_name, "r");
-	for(i=0;i<512;i++){
-		atual = fgetc(fp);
-		printf("%c", atual);
+	while(feof(fp)){
+		for(i=0;i<512*CLUSTER*cluster_needed;i++){
+			atual = fgetc(fp);
+			if(!feof(fp)){
+				atual = fgetc(fp);
+				/*cylinder.track[0].sector[0].block_s[i] = atual*/
+			}
+			printf("%c", atual);
+		}
 	}
 	fclose(fp);
 
 }
 
 
-void escreverArquivo(track_array *cylinder, char file_name[]){
+void escreverArquivo(char file_name[]){
 	double fp_size;
 	double cluster_needed;
 
@@ -130,7 +166,9 @@ int main(){
 
 	int opc;
 	char file_name[100];
-	track_array *cylinder = (track_array*)malloc(10 * sizeof(track_array));
+	fatlist **fat_list = malloc(sizeof(fat_list));
+	fatent *fat_ent = (fatent*)malloc(sizeof(fat_ent));
+	/* track_array *cylinder = (track_array*)malloc(sizeof(track_array)); */
 
 
 	opc = menu();
@@ -138,8 +176,10 @@ int main(){
 	if(opc == 1){
 		printf("Por favor, escreva o nome do arquivo: ");
 		scanf(" %s", file_name);
-		escreverArquivo(cylinder, file_name);
-
+		escreverArquivo(file_name);
+		createFatList(0, 0, fat_list, file_name);
+		// printf("File %s\n", fat_list[0].file_name);
+		// printf("File %s\n", fat_list[0].file_name);
 	}else if(opc == 2){
 
 	}else if(opc == 3){
