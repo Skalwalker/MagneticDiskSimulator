@@ -59,27 +59,25 @@ typedef struct fatlist_s{
 	unsigned int first_sector;
 }fatlist;
 
-/* QUE PORRA E ESSA KHALIL! */
+/* Struct de setores*/
 typedef struct fatent_s{
 	unsigned int used;
 	unsigned int eof;
 	unsigned int next;
 }fatent;
 
-void createFatList(int sector, int track, fatlist **fat_list, char file_name[]){
-	// fatlist *new_fatlist = (fatlist*)malloc(sizeof(fatlist));
-	fat_list = malloc(sizeof(fatlist*)*2);
+void searchFatlist(){
 
-	strcpy(fat_list[sector]->file_name, file_name);
-	fat_list[sector]->first_sector = (track * 60) + sector;
+}
 
-	strcpy("teste2.txt", fat_list[1]->file_name);
-	fat_list[1]->first_sector = 50;
+void allocFatList(int sector, int track, fatlist **fat_list, char file_name[]){
 
-	printf("File %s\n", fat_list[0]->file_name);
-	printf("File %s\n", fat_list[1]->file_name);
+	*fat_list = (fatlist*)realloc(*fat_list, sizeof(fatlist));
 
+	strcpy((*fat_list)[sector].file_name, file_name);
+	(*fat_list)[sector].first_sector = (track * 60) + sector;
 
+	printf("File %s\n", (*fat_list)[sector].file_name);
 }
 
 //
@@ -95,9 +93,7 @@ void createFatList(int sector, int track, fatlist **fat_list, char file_name[]){
 // }
 
 int menu(){
-
 	int escolha;
-
 
 	printf("\n1 - Escrever Arquivo\n");
 	printf("2 - Ler Arquivo\n");
@@ -164,12 +160,9 @@ void escreverArquivo(char file_name[]){
 
 int main(){
 
-	int opc;
+	int opc, s;
 	char file_name[100];
-	fatlist **fat_list = malloc(sizeof(fat_list));
-	fatent *fat_ent = (fatent*)malloc(sizeof(fat_ent));
-	/* track_array *cylinder = (track_array*)malloc(sizeof(track_array)); */
-
+	fatlist *fat_list = NULL;
 
 	opc = menu();
 
@@ -177,9 +170,9 @@ int main(){
 		printf("Por favor, escreva o nome do arquivo: ");
 		scanf(" %s", file_name);
 		escreverArquivo(file_name);
-		createFatList(0, 0, fat_list, file_name);
-		// printf("File %s\n", fat_list[0].file_name);
-		// printf("File %s\n", fat_list[0].file_name);
+		allocFatList(0, 1, &fat_list, file_name);
+		allocFatList(2, 0, &fat_list, "teste3.txt");
+
 	}else if(opc == 2){
 
 	}else if(opc == 3){
