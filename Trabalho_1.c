@@ -27,6 +27,7 @@
 #define TRUE 1
 #define FALSE 0
 FILE *fp;
+int numb_files;
 
 /*
 	Bloco
@@ -58,6 +59,7 @@ typedef struct fatlist_s{
 	char file_name[100];
 	unsigned int first_sector;
 }fatlist;
+fatlist *fat_list = NULL;
 
 /* Struct de setores*/
 typedef struct fatent_s{
@@ -68,16 +70,15 @@ typedef struct fatent_s{
 
 void searchFatlist(){
 
+
 }
 
-void allocFatList(int sector, int track, fatlist **fat_list, char file_name[]){
+void allocFatList(char file_name[]){
+	fat_list = (fatlist*)realloc(fat_list, numb_files*sizeof(fatlist));
 
-	*fat_list = (fatlist*)realloc(*fat_list, sizeof(fatlist));
+	strcpy(fat_list[numb_files].file_name, file_name);
 
-	strcpy((*fat_list)[sector].file_name, file_name);
-	(*fat_list)[sector].first_sector = (track * 60) + sector;
-
-	printf("File %s\n", (*fat_list)[sector].file_name);
+	printf("File %s\n", fat_list[numb_files].file_name);
 }
 
 //
@@ -111,6 +112,21 @@ int menu(){
 	return escolha;
 }
 
+char *arquivoExiste(char file_name[]){
+	int existe = FALSE;
+	while(!existe)
+		if(fopen(file_name, "r") == NULL){
+			printf("O Arquivo nao existe!\n");
+			printf("Ponha outro nome ou crie o arquivo\n");
+			scanf("%s", file_name);
+			existe = FALSE;
+		}else{
+			printf("Arquivo encontrado!!!\n");
+			existe = TRUE;
+			return file_name;
+		}
+}
+
 
 int sizeOfFile(){ /* Retorna o tamanho do arquivo em bytes */
 	/* Observação: o 'size' sempre
@@ -142,7 +158,6 @@ void dividirArquivo(char file_name[], double cluster_needed){
 
 }
 
-
 void escreverArquivo(char file_name[]){
 	double fp_size;
 	double cluster_needed;
@@ -153,7 +168,8 @@ void escreverArquivo(char file_name[]){
 	cluster_needed = ceil(fp_size / (CLUSTER * 512));
 	printf("O arquivo necessitará de %.0lf clusters\n", cluster_needed);
 	fclose(fp);
-	dividirArquivo(file_name, cluster_needed);
+	allocFatList(file_name);
+	// dividirArquivo(file_name, cluster_needed);
 }
 
 
@@ -162,16 +178,16 @@ int main(){
 
 	int opc, s;
 	char file_name[100];
-	fatlist *fat_list = NULL;
 
 	opc = menu();
 
 	if(opc == 1){
 		printf("Por favor, escreva o nome do arquivo: ");
-		scanf(" %s", file_name);
+		scanf("%s", file_name);
+		strcpy(file_name, arquivoExiste(file_name));
+		numb_files++;
 		escreverArquivo(file_name);
-		allocFatList(0, 1, &fat_list, file_name);
-		allocFatList(2, 0, &fat_list, "teste3.txt");
+		printf("%s\n", fat_list[1].file_name);
 
 	}else if(opc == 2){
 
