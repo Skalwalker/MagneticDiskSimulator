@@ -129,7 +129,7 @@ int threeToOne(int c, int t, int s){
 }
 
 int searchFatList(int cyl_trk_sec[]){
-	int i = 0, j = 0, k = 0, l = 0;
+	int i = 0, j = 0, k = 0;
 
 	if(fat_list == NULL){
 		cyl_trk_sec[0] = 0;
@@ -153,18 +153,39 @@ int searchFatList(int cyl_trk_sec[]){
 
 }
 
+void readFile(char file_name[], track_array *cylinder){
+	int i = 0, sec, j = 0;
+	int cyl_trk_sec[] = {0, 0, 0};
 
-//
-// void createFatEnt(int sector, fatent fat_ent){
-//
-// 	fatent *new_fatent = (fatent*)malloc(sizeof(fatent));
-//
-// 	new_fatent->used = TRUE;
-// 	new_fatent
-//
-// 	fat_ent[sector] = new_fatent;
-//
-// }
+	while((fat_list[i].file_name != file_name)&&(i<numb_files)){
+		i++;
+	}
+
+	if(i>numb_files){
+		printf("Arquivo Inexistente");
+	} else {
+		fp = fopen("saida.txt", "w+");
+		sec = fat_list[i].first_sector;
+		while(fat_ent[sec].eof != TRUE){
+			oneToThree(sec, cyl_trk_sec);
+			while((j < 512)&&(!feof(fp))){
+				if(!feof(fp)){
+					fprintf(fp, "%c", cylinder[cyl_trk_sec[0]].track[cyl_trk_sec[1]].sector[cyl_trk_sec[2]].bytes_s[j]);
+					j++;
+				}
+			}
+			j = 0;
+			printf("%d", sec);
+			sec = fat_ent[sec].next;
+
+		}
+		printf("Foi?");
+		fclose(fp);
+	}
+
+
+}
+
 
 int menu(){
 	int escolha;
@@ -187,7 +208,7 @@ int menu(){
 
 char *arquivoExiste(char file_name[]){
 	int existe = FALSE;
-	while(!existe){
+	while(existe == FALSE){
 		if(fopen(file_name, "r") == NULL){
 			printf("O Arquivo nao existe!\n");
 			printf("Ponha outro nome ou crie o arquivo\n");
@@ -196,9 +217,10 @@ char *arquivoExiste(char file_name[]){
 		}else{
 			printf("Arquivo encontrado!!!\n");
 			existe = TRUE;
-			return file_name;
 		}
 	}
+	fclose(fp);
+	return file_name;
 }
 
 
@@ -235,7 +257,7 @@ void escreverArquivo(char file_name[], track_array *cylinder){
 	double fp_size;
 	double cluster_needed;
 	int cyl_trk_sec[] = {0, 0, 0};
-	int pos_inicial;
+	int pos_inicial, i;
 
 	fp = fopen(file_name, "r");
 	fp_size = sizeOfFile();
@@ -247,42 +269,53 @@ void escreverArquivo(char file_name[], track_array *cylinder){
 	allocFatList(file_name, pos_inicial);
 	oneToThree(pos_inicial, cyl_trk_sec);
 
+
+	fp = fopen(file_name, "r");
 	while(!feof(fp)){
-		int i = 0;
-		allocFatEnt(TRUE, FALSE, pos_inicial+1, pos_inicial);
+		if(!feof(fp)){
+			allocFatEnt(TRUE, FALSE, pos_inicial+1, pos_inicial);
+		}
 		for(i = 0; i < 512; i++){
 			fscanf(fp, "%c", &cylinder[cyl_trk_sec[0]].track[cyl_trk_sec[1]]
 				.sector[cyl_trk_sec[2]].bytes_s[i]);
 
 		}
-		cyl_trk_sec[3] = pos_inicial + 1;
+		pos_inicial += 1;
+		cyl_trk_sec[2] = pos_inicial;
 	}
+	allocFatEnt(TRUE, TRUE, pos_inicial+1, pos_inicial);
+
 }
 
 
 int main(){
 
-	int opc, s, i, k=0;
+	int opc = 0;
 	char file_name[100];
 	track_array *cylinder = allocCylinder();
 	fat_ent = (fatent*)malloc(30000*sizeof(fatent));
 
-	opc = menu();
+	while(opc != 5){
+		opc = menu();
 
-	if(opc == 1){
-		printf("Por favor, escreva o nome do arquivo: ");
-		scanf("%s", file_name);
-		strcpy(file_name, arquivoExiste(file_name));
-		numb_files++;
-		escreverArquivo(file_name, cylinder);
+		if(opc == 1){
+			printf("Por favor, escreva o nome do arquivo: ");
+			scanf("%s", file_name);
+			//strcpy(file_name, arquivoExiste(file_name));
+			numb_files++;
+			escreverArquivo(file_name, cylinder);
 
-	}else if(opc == 2){
+		}else if(opc == 2){
+			printf("Por favor, escreva o nome do arquivo para leitura: ");
+			scanf("%s", file_name);
+			readFile(file_name, cylinder);
+		}else if(opc == 3){
 
-	}else if(opc == 3){
+		}else if(opc == 4){
 
-	}else if(opc == 4){
-
+		}
 	}
+
 
 	return 0;
 }
