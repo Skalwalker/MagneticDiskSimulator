@@ -67,6 +67,7 @@ typedef struct fatent_s{
 	unsigned int eof;
 	unsigned int next;
 }fatent;
+fatent *fat_ent;
 
 track_array *allocCylinder(){
 	int i, j;
@@ -86,6 +87,7 @@ track_array *allocCylinder(){
 
 	return new_track_array;
 }
+
 void allocFatList(char file_name[], int pos_inicial){
 	fat_list = (fatlist*)realloc(fat_list, numb_files+1*sizeof(fatlist));
 
@@ -93,6 +95,12 @@ void allocFatList(char file_name[], int pos_inicial){
 	fat_list[numb_files].first_sector = pos_inicial;
 
 	printf("File %s\n", fat_list[numb_files].file_name);
+}
+
+void allocFatEnt(int used ,int eof ,int next, int sector){
+	fat_ent[sector].used = used;
+	fat_ent[sector].eof = eof;
+	fat_ent[sector].next = next;
 }
 
 void oneToThree(int index, int cyl_trk_sec[]){
@@ -129,7 +137,7 @@ int searchFatList(int cyl_trk_sec[]){
 		cyl_trk_sec[2] = 0;
 	}
 
-	while(fatent[i].used != FALSE){
+	while(fat_ent[i].used != FALSE){
 		if(i%60 == 0){
 			j++;
 			i = j*300;
@@ -239,9 +247,9 @@ void escreverArquivo(char file_name[], track_array *cylinder){
 	allocFatList(file_name, pos_inicial);
 	oneToThree(pos_inicial, cyl_trk_sec);
 
-
 	while(!feof(fp)){
 		int i = 0;
+		allocFatEnt(TRUE, FALSE, pos_inicial+1, pos_inicial);
 		for(i = 0; i < 512; i++){
 			fscanf(fp, "%c", &cylinder[cyl_trk_sec[0]].track[cyl_trk_sec[1]]
 				.sector[cyl_trk_sec[2]].bytes_s[i]);
@@ -254,9 +262,10 @@ void escreverArquivo(char file_name[], track_array *cylinder){
 
 int main(){
 
-	int opc, s, i;
+	int opc, s, i, k=0;
 	char file_name[100];
 	track_array *cylinder = allocCylinder();
+	fat_ent = (fatent*)malloc(30000*sizeof(fatent));
 
 	opc = menu();
 
