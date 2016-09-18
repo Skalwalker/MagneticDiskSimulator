@@ -27,7 +27,7 @@
 #define TRUE 1
 #define FALSE 0
 FILE *fp;
-int numb_files;
+int numb_files = -1;
 
 /*
 	Bloco
@@ -68,18 +68,83 @@ typedef struct fatent_s{
 	unsigned int next;
 }fatent;
 
-void searchFatlist(){
+track_array *allocCylinder(){
+	int i, j;
 
+	track_array *new_track_array =
+		(track_array*)malloc(sizeof(track_array)*10);
 
+	for(i = 0; i < 5; i++){
+		new_track_array->track[i] =
+			*(sector_array*)malloc(sizeof(sector_array));
+
+		for(j = 0; j < 60; j++){
+			new_track_array->track[i].sector[j] =
+				*(block*)malloc(sizeof(block));
+		}
+	}
+
+	return new_track_array;
 }
-
-void allocFatList(char file_name[]){
-	fat_list = (fatlist*)realloc(fat_list, numb_files*sizeof(fatlist));
+void allocFatList(char file_name[], int pos_inicial){
+	fat_list = (fatlist*)realloc(fat_list, numb_files+1*sizeof(fatlist));
 
 	strcpy(fat_list[numb_files].file_name, file_name);
+	fat_list[numb_files].first_sector = pos_inicial;
 
 	printf("File %s\n", fat_list[numb_files].file_name);
 }
+
+void oneToThree(int index, int cyl_trk_sec[]){
+    int t;
+	int s;
+    int c = index/300;
+
+    index -= 300*c;
+    if((index/60) >= 5){
+        t = ((index/60)/5)-1;
+    }else{
+        t = (index/60);
+    }
+    s = index%60;
+
+
+    cyl_trk_sec[0] = c;
+    cyl_trk_sec[1] = t;
+    cyl_trk_sec[2] = s;
+}
+
+int threeToOne(int c, int t, int s){
+	int index = (300 * c) + (60 * t) + s;
+
+	return index;
+}
+
+int searchFatList(int cyl_trk_sec[]){
+	int i = 0, j = 0, k = 0, l = 0;
+
+	if(fat_list == NULL){
+		cyl_trk_sec[0] = 0;
+		cyl_trk_sec[1] = 0;
+		cyl_trk_sec[2] = 0;
+	}
+
+	while(fatent[i].used != FALSE){
+		if(i%60 == 0){
+			j++;
+			i = j*300;
+		}
+		if(i%3000 == 0){
+			k++;
+			i = k*60;
+		}
+		i++;
+	}
+
+	return i;
+
+}
+
 
 //
 // void createFatEnt(int sector, fatent fat_ent){
@@ -114,7 +179,7 @@ int menu(){
 
 char *arquivoExiste(char file_name[]){
 	int existe = FALSE;
-	while(!existe)
+	while(!existe){
 		if(fopen(file_name, "r") == NULL){
 			printf("O Arquivo nao existe!\n");
 			printf("Ponha outro nome ou crie o arquivo\n");
@@ -125,6 +190,7 @@ char *arquivoExiste(char file_name[]){
 			existe = TRUE;
 			return file_name;
 		}
+	}
 }
 
 
@@ -155,12 +221,13 @@ void dividirArquivo(char file_name[], double cluster_needed){
 		}
 	}
 	fclose(fp);
-
 }
 
-void escreverArquivo(char file_name[]){
+void escreverArquivo(char file_name[], track_array *cylinder){
 	double fp_size;
 	double cluster_needed;
+	int cyl_trk_sec[] = {0, 0, 0};
+	int pos_inicial;
 
 	fp = fopen(file_name, "r");
 	fp_size = sizeOfFile();
@@ -168,16 +235,28 @@ void escreverArquivo(char file_name[]){
 	cluster_needed = ceil(fp_size / (CLUSTER * 512));
 	printf("O arquivo necessitará de %.0lf clusters\n", cluster_needed);
 	fclose(fp);
-	allocFatList(file_name);
-	// dividirArquivo(file_name, cluster_needed);
-}
+	pos_inicial = searchFatList(cyl_trk_sec);
+	allocFatList(file_name, pos_inicial);
+	oneToThree(pos_inicial, cyl_trk_sec);
 
+
+	while(!feof(fp)){
+		int i = 0;
+		for(i = 0; i < 512; i++){
+			fscanf(fp, "%c", &cylinder[cyl_trk_sec[0]].track[cyl_trk_sec[1]]
+				.sector[cyl_trk_sec[2]].bytes_s[i]);
+
+		}
+		cyl_trk_sec[3] = pos_inicial + 1;
+	}
+}
 
 
 int main(){
 
-	int opc, s;
+	int opc, s, i;
 	char file_name[100];
+	track_array *cylinder = allocCylinder();
 
 	opc = menu();
 
@@ -186,8 +265,7 @@ int main(){
 		scanf("%s", file_name);
 		strcpy(file_name, arquivoExiste(file_name));
 		numb_files++;
-		escreverArquivo(file_name);
-		printf("%s\n", fat_list[1].file_name);
+		escreverArquivo(file_name, cylinder);
 
 	}else if(opc == 2){
 
