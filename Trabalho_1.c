@@ -150,7 +150,6 @@ int searchFatList(int cyl_trk_sec[]){
 	}
 
 	return i;
-
 }
 
 void readFile(char file_name[], track_array *cylinder){
@@ -182,8 +181,6 @@ void readFile(char file_name[], track_array *cylinder){
 		printf("Foi?");
 		fclose(fp);
 	}
-
-
 }
 
 
@@ -206,10 +203,14 @@ int menu(){
 	return escolha;
 }
 
-char *arquivoExiste(char file_name[]){
+void arquivoExiste(char file_name[]){
 	int existe = FALSE;
+
+	printf("Por favor, escreva o nome do arquivo: ");
+	scanf("%s", file_name);
+
 	while(existe == FALSE){
-		if(fopen(file_name, "r") == NULL){
+		if(fopen(file_name, "r+") == NULL){
 			printf("O Arquivo nao existe!\n");
 			printf("Ponha outro nome ou crie o arquivo\n");
 			scanf("%s", file_name);
@@ -219,8 +220,6 @@ char *arquivoExiste(char file_name[]){
 			existe = TRUE;
 		}
 	}
-	fclose(fp);
-	return file_name;
 }
 
 
@@ -235,33 +234,15 @@ int sizeOfFile(){ /* Retorna o tamanho do arquivo em bytes */
 	return size;
 }
 
-void dividirArquivo(char file_name[], double cluster_needed){
-	char atual;
-	int i;
-
-	fp = fopen(file_name, "r");
-	while(feof(fp)){
-		for(i=0;i<512*CLUSTER*cluster_needed;i++){
-			atual = fgetc(fp);
-			if(!feof(fp)){
-				atual = fgetc(fp);
-				/*cylinder.track[0].sector[0].block_s[i] = atual*/
-			}
-			printf("%c", atual);
-		}
-	}
-	fclose(fp);
-}
-
 void escreverArquivo(char file_name[], track_array *cylinder){
-	double fp_size;
 	double cluster_needed;
+	double fp_size;
 	int cyl_trk_sec[] = {0, 0, 0};
 	int pos_inicial, i;
 
-	fp = fopen(file_name, "r");
+	fp = fopen(file_name, "r+");
 	fp_size = sizeOfFile();
-	printf("Tamanho do Arquivo digitado: %.0lf bytes\n", fp_size);
+	printf("Tamanho do Arquivo digitado: %f bytes\n", fp_size);
 	cluster_needed = ceil(fp_size / (CLUSTER * 512));
 	printf("O arquivo necessitará de %.0lf clusters\n", cluster_needed);
 	fclose(fp);
@@ -270,7 +251,7 @@ void escreverArquivo(char file_name[], track_array *cylinder){
 	oneToThree(pos_inicial, cyl_trk_sec);
 
 
-	fp = fopen(file_name, "r");
+	fp = fopen(file_name, "r+");
 	while(!feof(fp)){
 		if(!feof(fp)){
 			allocFatEnt(TRUE, FALSE, pos_inicial+1, pos_inicial);
@@ -287,10 +268,38 @@ void escreverArquivo(char file_name[], track_array *cylinder){
 
 }
 
+void printFatTable(){
+	int i = 0;
+	int fp_size;
+	int sec;
+	char file_name[100];
+
+	printf("========================================================\n");
+	printf("NOME:            TAMANHO EM DISCO            LOCALIZACAO\n");
+	while(i <= numb_files){
+		strcpy(file_name, fat_list[i].file_name);
+		fp = fopen(file_name, "r+");
+		fp_size = sizeOfFile(fp);
+		fclose(fp);
+
+		printf("%s%12d Bytes                  ", file_name, fp_size);
+		sec = fat_list[i].first_sector;
+
+		while(fat_ent[sec].eof != TRUE){
+			printf("%d,", sec);
+			sec = fat_ent[sec].next;
+		}
+		printf("\n");
+		i++;
+	}
+	printf("========================================================\n");
+}
+
 
 int main(){
 
 	int opc = 0;
+	int fp_size;
 	char file_name[100];
 	track_array *cylinder = allocCylinder();
 	fat_ent = (fatent*)malloc(30000*sizeof(fatent));
@@ -299,9 +308,7 @@ int main(){
 		opc = menu();
 
 		if(opc == 1){
-			printf("Por favor, escreva o nome do arquivo: ");
-			scanf("%s", file_name);
-			//strcpy(file_name, arquivoExiste(file_name));
+			arquivoExiste(file_name);
 			numb_files++;
 			escreverArquivo(file_name, cylinder);
 
@@ -312,7 +319,7 @@ int main(){
 		}else if(opc == 3){
 
 		}else if(opc == 4){
-
+			printFatTable();
 		}
 	}
 
