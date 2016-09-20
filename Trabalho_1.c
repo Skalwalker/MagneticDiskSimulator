@@ -17,6 +17,9 @@
 #include <string.h>
 #include <math.h>
 
+#define GREEN   "\x1b[32m"
+#define RESET   "\x1b[0m"
+#define RED     "\x1b[31m"
 
 #define CLUSTER 4
 #define TRILHA_SUPERF  10
@@ -107,8 +110,6 @@ void allocFatList(char file_name[], int pos_inicial){
 
 	strcpy(fat_list[numb_files].file_name, file_name);
 	fat_list[numb_files].first_sector = pos_inicial;
-
-	printf("File %s\n", fat_list[numb_files].file_name);
 }
 
 void allocFatEnt(int used ,int eof ,int next, int sector){
@@ -236,7 +237,7 @@ void readFile(char file_name[], track_array *cylinder){
 	}
 
 	if(i > numb_files){
-		printf("Arquivo Inexistente\n");
+		printf(RED "Arquivo Inexistente\n" RESET);
 	} else {
 		fp = fopen("saida.txt", "w+");
 		sec = fat_list[i].first_sector;
@@ -271,12 +272,12 @@ void arquivoExiste(char file_name[]){
 
 	while(existe == FALSE){
 		if(fopen(file_name, "r+") == NULL){
-			printf("O Arquivo nao existe!\n");
+			printf(RED "O Arquivo nao existe!\n" RESET);
 			printf("Ponha outro nome ou crie o arquivo\n");
 			scanf("%s", file_name);
 			existe = FALSE;
 		}else{
-			printf("Arquivo encontrado!!!\n");
+			printf(GREEN "Arquivo encontrado!!!\n" RESET);
 			existe = TRUE;
 		}
 	}
@@ -288,12 +289,19 @@ void escreverArquivo(char file_name[], track_array *cylinder){
 	int cyl_trk_sec[] = {0, 0, 0};
 	int pos_inicial, i, written_sector = 0, j, next_sector, actual_sector;
 
+	system("clear || clean");
 	fp = fopen(file_name, "r+");
 	fp_size = sizeOfFile();
-	printf("Tamanho do Arquivo digitado: %.0f bytes\n", fp_size);
+
+	printf(" - Nome do arquivo:" RED " %s\n" RESET, file_name);
+	printf(" - Tamanho do Arquivo digitado:" RED " %.0f bytes\n"RESET, fp_size);
+
 	cluster_needed = ceil(fp_size / (CLUSTER * 512));
-	printf("O arquivo necessitará de %.0lf clusters\n", cluster_needed);
+	printf(" - O arquivo necessitará de" RED " %.0lf cluster(s)\n"
+	 		RESET, cluster_needed);
+
 	fclose(fp);
+
 	pos_inicial = searchFatList(cyl_trk_sec);
 	allocFatList(file_name, pos_inicial);
 	oneToThree(pos_inicial, cyl_trk_sec);
