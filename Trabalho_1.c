@@ -29,66 +29,80 @@
 FILE *fp;
 int numb_files = -1;
 
-/*
-	Bloco
-	 TAM_SETOR = 512
-*/
+
+/* ------------------------------------------------------ */
+/* COMECO DAS ESTRUTURAS PARA ORGANIZACAO DO DISCO RIGIDO */
+/* ------------------------------------------------------ */
+
+
 typedef struct block{
+	/*
+		Bloco
+		TAM_SETOR = 512
+	*/
 	unsigned char bytes_s[512];
 }block;
 
-/*
-	Setor
-	SETORES_TRILHA = 60 setor/trilha
-*/
 typedef struct sector_array{
+	/*
+		Setor
+		SETORES_TRILHA = 60 setor/trilha
+	*/
 	block sector[60];
 }sector_array;
 
-/*
-	Trilha
-	TRILHA_CILINDRO  = 5 trilha/cilindro
-*/
 typedef struct track_array{
+	/*
+		Trilha
+		TRILHA_CILINDRO  = 5 trilha/cilindro
+	*/
 	sector_array track[5];
 }track_array;
 
 
-/* Tabela FAT */
 typedef struct fatlist_s{
+	/* Tabela FAT */
 	char file_name[100];
 	unsigned int first_sector;
 }fatlist;
 fatlist *fat_list = NULL;
 
-/* Struct de setores*/
 typedef struct fatent_s{
+	/* Struct de setores*/
 	unsigned int used;
 	unsigned int eof;
 	unsigned int next;
 }fatent;
 fatent *fat_ent;
+/* --------------------------------------------------- */
+/* FIM DAS ESTRUTURAS PARA ORGANIZACAO DO DISCO RIGIDO */
+/* --------------------------------------------------- */
 
+
+/* --------------------------------- */
+/* COMECO DAS FUNCOES PARA AlOCACAO  */
+/* --------------------------------- */
 track_array *allocCylinder(){
+	/*
+		Aloca 10 cilindros porque:
+		Qtd de cilindro = numeros de trila por superfice
+	*/
 	int i, j;
 
 	track_array *new_track_array =
 		(track_array*)malloc(sizeof(track_array)*10);
 
-	// for(i = 0; i < 5; i++){
-		// new_track_array->track[i] =
-		// 	*(sector_array*)malloc(sizeof(sector_array));
-		//
-		// for(j = 0; j < 60; j++){
-		// 	new_track_array->track[i].sector[j] =
-		// 		*(block*)malloc(sizeof(block));
-		// }
-	// }
-
 	return new_track_array;
 }
 
 void allocFatList(char file_name[], int pos_inicial){
+	/*
+		Re-aloca memoria para a estrutura de FatList de acordo com o necessario
+
+		Param:
+		- file_name[]: nome do arquivo respectivo a fatList
+		- pos_inicial: setor de inicio do arquivo
+	*/
 	fat_list = (fatlist*)realloc(fat_list, (numb_files+1)*sizeof(fatlist));
 
 	strcpy(fat_list[numb_files].file_name, file_name);
@@ -98,13 +112,38 @@ void allocFatList(char file_name[], int pos_inicial){
 }
 
 void allocFatEnt(int used ,int eof ,int next, int sector){
+	/*
+		Popula a FatEnt.
+
+		Param:
+		- used: Se a area esta sendo usada ou nao
+		- eof: fim de arquivo TRUE ou FALSE
+		- next: proximo setor
+		- sector: setor respectivo da fatent
+	*/
 	fat_ent[sector].used = used;
 	fat_ent[sector].eof = eof;
 	fat_ent[sector].next = next;
 }
+/* ------------------------------ */
+/* FIM DAS FUNCOES PARA AlOCACAO  */
+/* ------------------------------ */
 
+
+/* --------------------------------- */
+/* COMECO DAS FUNCOES DE CONVERSAO   */
+/* --------------------------------- */
 void oneToThree(int index, int cyl_trk_sec[]){
-    int t;
+	/*
+		Converte o valor de setor bruto para sua posicao
+		cilindro/trilha/setor
+
+		Param:
+		-index: int de setor bruto
+		-cyl_trk_sec: array de inteiros para o cilindro/trilha/setor
+
+	*/
+	int t;
 	int s;
     int c = index/300;
 
@@ -123,10 +162,23 @@ void oneToThree(int index, int cyl_trk_sec[]){
 }
 
 int threeToOne(int c, int t, int s){
+	/*
+		Converte o valor de sua posicao
+		cilindro/trilha/setor para o setor bruto
+
+		Param:
+		- c: numero do cilindro
+		- t: numero da trilha
+		- s: numero do setor
+
+	*/
 	int index = (300 * c) + (60 * t) + s;
 
 	return index;
 }
+/* --------------------------------- */
+/* FIM DAS FUNCOES DE CONVERSAO      */
+/* --------------------------------- */
 
 int searchFatList(int cyl_trk_sec[]){
 	int i, j, k;
@@ -179,27 +231,11 @@ void readFile(char file_name[], track_array *cylinder){
 	}
 }
 
-
-int menu(){
-	int escolha;
-
-	printf("\n1 - Escrever Arquivo\n");
-	printf("2 - Ler Arquivo\n");
-	printf("3 - Apagar Arquivo\n");
-	printf("4 - Mostrar Tabela FAT\n");
-	printf("5 - Sair\n");
-	printf("\n>>> ");
-	scanf("%d", &escolha);
-	while((escolha < 1)||(escolha > 5)){
-		printf("Favor escolher um valor entre 1 e 5\n");
-		printf(">>> ");
-		scanf("%d", &escolha);
-	}
-
-	return escolha;
-}
-
 void arquivoExiste(char file_name[]){
+	/*
+		Funcao para verificacao da existencia do arquivo passado
+		por parametro, realiza-se o teste de consistencia para o mesmo.
+	*/
 	int existe = FALSE;
 
 	printf("Por favor, escreva o nome do arquivo: ");
@@ -219,14 +255,18 @@ void arquivoExiste(char file_name[]){
 }
 
 
-int sizeOfFile(){ /* Retorna o tamanho do arquivo em bytes */
-	/* Observação: o 'size' sempre
-	   tera alguns bytes a mais devido ao
-	   '\n' ao final do arquivo e das linhas.*/
+int sizeOfFile(){
+	/*
+		Retorna o tamanho do arquivo em bytes
+			Observação: o 'size' sempre
+	   		tera alguns bytes a mais devido ao
+	   		'\n' ao final do arquivo e das linhas.
+	*/
 	int size;
 
 	fseek(fp, 0, SEEK_END); /* Leva o ponteiro para o final do arquivo */
 	size = ftell(fp); /* Retorna a posição do ponteiro dentro do arquivo */
+
 	return size;
 }
 
@@ -299,6 +339,9 @@ void escreverArquivo(char file_name[], track_array *cylinder){
 }
 
 void printFatTable(){
+	/*
+		Funcao para imprimir a tabela FAT
+	*/
 	int i = 0;
 	int fp_size;
 	int sec;
@@ -309,7 +352,7 @@ void printFatTable(){
 	while(i <= numb_files){
 		strcpy(file_name, fat_list[i].file_name);
 		fp = fopen(file_name, "r+");
-		fp_size = sizeOfFile(fp);
+		fp_size = sizeOfFile();
 		fclose(fp);
 
 		printf("%s%12d Bytes                  ", file_name, fp_size);
@@ -324,6 +367,30 @@ void printFatTable(){
 		i++;
 	}
 	printf("========================================================\n");
+}
+
+
+int menu(){
+	/*
+		Funcao para impressao do menu principal retorna a escolha
+		feita pelo usuario
+	*/
+	int escolha;
+
+	printf("\n1 - Escrever Arquivo\n");
+	printf("2 - Ler Arquivo\n");
+	printf("3 - Apagar Arquivo\n");
+	printf("4 - Mostrar Tabela FAT\n");
+	printf("5 - Sair\n");
+	printf("\n>>> ");
+	scanf("%d", &escolha);
+	while((escolha < 1)||(escolha > 5)){
+		printf("Favor escolher um valor entre 1 e 5\n");
+		printf(">>> ");
+		scanf("%d", &escolha);
+	}
+
+	return escolha;
 }
 
 
@@ -342,12 +409,11 @@ int main(){
 			arquivoExiste(file_name);
 			numb_files++;
 			escreverArquivo(file_name, cylinder);
-
 		}else if(opc == 2){
 			printf("Por favor, escreva o nome do arquivo para leitura: ");
 			scanf("%s", file_name);
 			readFile(file_name, cylinder);
-			
+
 		}else if(opc == 3){
 
 		}else if(opc == 4){
