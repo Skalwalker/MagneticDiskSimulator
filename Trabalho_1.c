@@ -218,9 +218,10 @@ int searchFatList(int cyl_trk_sec[]){
 
 void readFile(char file_name[], track_array *cylinder){
 	int i = 0, sec, j = 0, numb_sectors = 1, read_sector = 0, fp_size, l = 0;
+	char file_name_2[100];
 	int cyl_trk_sec[] = {0, 0, 0};
 
-	while(strcmp(fat_list[i].file_name, file_name) != 0 && (i<numb_files)){
+	while(strcmp(fat_list[i].file_name, file_name) != 0 && (i < numb_files)){
 		i++;
 	}
 	sec = fat_list[i].first_sector;
@@ -230,13 +231,13 @@ void readFile(char file_name[], track_array *cylinder){
 		sec = fat_ent[sec].next;
 	}
 
-	if(i <= numb_files){
-		strcpy(file_name, fat_list[i].file_name);
-		fp = fopen(file_name, "r+");
+	if(i < numb_files){
+		strcpy(file_name_2, fat_list[i].file_name);
+		fp = fopen(file_name_2, "r+");
 		fp_size = sizeOfFile();
 	}
 
-	if(i > numb_files){
+	if(strcmp(fat_list[i].file_name, file_name) != 0){
 		printf(RED "Arquivo Inexistente\n" RESET);
 	} else {
 		fp = fopen("saida.txt", "w+");
@@ -358,6 +359,31 @@ void escreverArquivo(char file_name[], track_array *cylinder){
 	   Melhor aqui do que com um if dentro do loop. */
 }
 
+void deleteFile(char file_name[]){
+	int i = 0, sec;
+
+	while(strcmp(fat_list[i].file_name, file_name) != 0 && i <= numb_files){
+		i++;
+	}
+		printf("%d\n", i);
+		printf("NUMB %d\n", numb_files);
+
+		if(strcmp(fat_list[i].file_name, file_name) != 0){
+			printf(RED "O arquivo nao existe!!\n" RESET);
+		}else{
+			sec = fat_list[i].first_sector;
+
+			while(fat_ent[sec].eof != 1){
+				fat_ent[sec].used = 0;
+				sec = fat_ent[sec].next;
+			}
+			fat_ent[sec].used = 0;
+			fat_ent[sec].eof = 0;
+
+			strcpy(fat_list[i].file_name, "0");
+		}
+	}
+
 void printFatTable(){
 	/*
 		Funcao para imprimir a tabela FAT
@@ -370,20 +396,22 @@ void printFatTable(){
 	printf("========================================================\n");
 	printf("NOME:            TAMANHO EM DISCO            LOCALIZACAO\n");
 	while(i <= numb_files){
-		strcpy(file_name, fat_list[i].file_name);
-		fp = fopen(file_name, "r+");
-		fp_size = sizeOfFile();
-		fclose(fp);
+		if(strcmp(fat_list[i].file_name, "0") != 0){
+			strcpy(file_name, fat_list[i].file_name);
+			fp = fopen(file_name, "r+");
+			fp_size = sizeOfFile();
+			fclose(fp);
 
-		printf("%s%12d Bytes                  ", file_name, fp_size);
-		sec = fat_list[i].first_sector;
+			printf("%s%12d Bytes                  ", file_name, fp_size);
+			sec = fat_list[i].first_sector;
 
-		while(fat_ent[sec].eof != TRUE){
+			while(fat_ent[sec].eof != TRUE){
+				printf("%d,", sec);
+				sec = fat_ent[sec].next;
+			}
 			printf("%d,", sec);
-			sec = fat_ent[sec].next;
+			printf("\n");
 		}
-		printf("%d,", sec);
-		printf("\n");
 		i++;
 	}
 	printf("========================================================\n");
@@ -434,7 +462,9 @@ int main(){
 			readFile(file_name, cylinder);
 
 		}else if(opc == 3){
-
+			printf("Por favor, escreva o nome do arquivo para ser deletado: ");
+			scanf("%s", file_name);
+			deleteFile(file_name);
 		}else if(opc == 4){
 			printFatTable();
 		}
