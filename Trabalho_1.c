@@ -278,13 +278,14 @@ void escreverArquivo(char file_name[], track_array *cylinder){
 				j++;
 				cyl_trk_sec[2]++;
 				if(j == 4){
-				/* Caso todo o cluster abaixo esta ocupado,
+				/* Caso todo o cluster abaixo esteja ocupado,
 				   ele pula para o de baixo */
 					cyl_trk_sec[2] += 57;
 				}
 			}
 			pos_inicial = cyl_trk_sec[2];
 		} else {
+			/* Caso nao tenha escrito um cluster pos_inicial++ normalmente */
 			pos_inicial++;
 			cyl_trk_sec[2] = pos_inicial;
 		}
@@ -293,6 +294,8 @@ void escreverArquivo(char file_name[], track_array *cylinder){
 		allocFatEnt(TRUE, FALSE, next_sector, actual_sector);
 	}
 	fat_ent[actual_sector].eof = TRUE;
+	/* Esta linha atribui eof no ultimo setor escrito.
+	   Melhor aqui do que com um if dentro do loop. */
 }
 
 void printFatTable(){
@@ -344,6 +347,7 @@ int main(){
 			printf("Por favor, escreva o nome do arquivo para leitura: ");
 			scanf("%s", file_name);
 			readFile(file_name, cylinder);
+			
 		}else if(opc == 3){
 
 		}else if(opc == 4){
