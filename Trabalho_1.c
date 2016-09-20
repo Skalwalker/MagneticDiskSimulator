@@ -80,7 +80,7 @@ fatent *fat_ent;
 
 
 /* --------------------------------- */
-/* COMECO DAS FUNCOES PARA AlOCACAO  */
+/* COMECO DAS FUNCOES PARA ALOCACAO  */
 /* --------------------------------- */
 track_array *allocCylinder(){
 	/*
@@ -179,6 +179,22 @@ int threeToOne(int c, int t, int s){
 /* --------------------------------- */
 /* FIM DAS FUNCOES DE CONVERSAO      */
 /* --------------------------------- */
+int sizeOfFile(){
+	/*
+	Retorna o tamanho do arquivo em bytes
+	Observação: o 'size' sempre
+	tera alguns bytes a mais devido ao
+	'\n' ao final do arquivo e das linhas.
+	*/
+	int size;
+
+	fseek(fp, 0, SEEK_END); /* Leva o ponteiro para o final do arquivo */
+	size = ftell(fp); /* Retorna a posição do ponteiro dentro do arquivo */
+
+	return size;
+}
+
+
 
 int searchFatList(int cyl_trk_sec[]){
 	int i, j, k;
@@ -200,33 +216,45 @@ int searchFatList(int cyl_trk_sec[]){
 }
 
 void readFile(char file_name[], track_array *cylinder){
-	int i = 0, sec, j = 0;
+	int i = 0, sec, j = 0, numb_sectors = 1, read_sector = 0, fp_size, l = 0;
 	int cyl_trk_sec[] = {0, 0, 0};
 
-	while((fat_list[i].file_name != file_name)&&(i<numb_files)){
+	while(strcmp(fat_list[i].file_name, file_name) != 0 && (i<numb_files)){
 		i++;
 	}
+	sec = fat_list[i].first_sector;
 
-	if(i>numb_files){
-		printf("Arquivo Inexistente");
+	while(fat_ent[sec].eof == FALSE){
+		numb_sectors++;
+		sec = fat_ent[sec].next;
+	}
+
+	if(i <= numb_files){
+		strcpy(file_name, fat_list[i].file_name);
+		fp = fopen(file_name, "r+");
+		fp_size = sizeOfFile();
+	}
+
+	if(i > numb_files){
+		printf("Arquivo Inexistente\n");
 	} else {
-		fp = fopen("saida.txt", "w");
+		fp = fopen("saida.txt", "w+");
 		sec = fat_list[i].first_sector;
-		while(fat_ent[sec].eof != TRUE){
-			oneToThree(sec, cyl_trk_sec);
-			while((j < 512)&&(!feof(fp))){
-				if(!feof(fp)){
-					fprintf(fp, "%c", cylinder[cyl_trk_sec[0]]
-					.track[cyl_trk_sec[1]].sector[cyl_trk_sec[2]].bytes_s[j]);
-					j++;
-				}
-			}
-			j = 0;
-			printf("%d", sec);
-			sec = fat_ent[sec].next;
 
+		while(l < fp_size){
+			oneToThree(sec, cyl_trk_sec);
+			while(j < 512 && l < fp_size){
+				fprintf(fp, "%c", cylinder[cyl_trk_sec[0]]
+			      .track[cyl_trk_sec[1]].sector[cyl_trk_sec[2]].bytes_s[j]);
+				j++;
+				l++;
+			}
+
+			j = 0;
+			printf("%d\n", sec);
+			sec = fat_ent[sec].next;
+			read_sector++;
 		}
-		printf("Foi?");
 		fclose(fp);
 	}
 }
@@ -252,22 +280,6 @@ void arquivoExiste(char file_name[]){
 			existe = TRUE;
 		}
 	}
-}
-
-
-int sizeOfFile(){
-	/*
-		Retorna o tamanho do arquivo em bytes
-			Observação: o 'size' sempre
-	   		tera alguns bytes a mais devido ao
-	   		'\n' ao final do arquivo e das linhas.
-	*/
-	int size;
-
-	fseek(fp, 0, SEEK_END); /* Leva o ponteiro para o final do arquivo */
-	size = ftell(fp); /* Retorna a posição do ponteiro dentro do arquivo */
-
-	return size;
 }
 
 void escreverArquivo(char file_name[], track_array *cylinder){
@@ -389,7 +401,6 @@ int menu(){
 		printf(">>> ");
 		scanf("%d", &escolha);
 	}
-
 	return escolha;
 }
 
