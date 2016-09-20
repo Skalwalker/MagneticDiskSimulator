@@ -75,21 +75,21 @@ track_array *allocCylinder(){
 	track_array *new_track_array =
 		(track_array*)malloc(sizeof(track_array)*10);
 
-	for(i = 0; i < 5; i++){
-		new_track_array->track[i] =
-			*(sector_array*)malloc(sizeof(sector_array));
-
-		for(j = 0; j < 60; j++){
-			new_track_array->track[i].sector[j] =
-				*(block*)malloc(sizeof(block));
-		}
-	}
+	// for(i = 0; i < 5; i++){
+		// new_track_array->track[i] =
+		// 	*(sector_array*)malloc(sizeof(sector_array));
+		//
+		// for(j = 0; j < 60; j++){
+		// 	new_track_array->track[i].sector[j] =
+		// 		*(block*)malloc(sizeof(block));
+		// }
+	// }
 
 	return new_track_array;
 }
 
 void allocFatList(char file_name[], int pos_inicial){
-	fat_list = (fatlist*)realloc(fat_list, numb_files+1*sizeof(fatlist));
+	fat_list = (fatlist*)realloc(fat_list, (numb_files+1)*sizeof(fatlist));
 
 	strcpy(fat_list[numb_files].file_name, file_name);
 	fat_list[numb_files].first_sector = pos_inicial;
@@ -129,27 +129,22 @@ int threeToOne(int c, int t, int s){
 }
 
 int searchFatList(int cyl_trk_sec[]){
-	int i = 0, j = 0, k = 0;
+	int i, j, k;
+	i = j = k = 0;
 
-	if(fat_list == NULL){
-		cyl_trk_sec[0] = 0;
-		cyl_trk_sec[1] = 0;
-		cyl_trk_sec[2] = 0;
-	}
-
-	while(fat_ent[i].used != FALSE){
-		if(i%60 == 0){
+	while(fat_ent[i].used == TRUE){
+		i++;
+		if(i % 60 == 0){
 			j++;
 			i = j*300;
 		}
-		if(i%3000 == 0){
+		if(i % 3000 == 0){
 			k++;
 			i = k*60;
 		}
-		i++;
 	}
+ 	return i;
 
-	return i;
 }
 
 void readFile(char file_name[], track_array *cylinder){
@@ -163,13 +158,14 @@ void readFile(char file_name[], track_array *cylinder){
 	if(i>numb_files){
 		printf("Arquivo Inexistente");
 	} else {
-		fp = fopen("saida.txt", "w+");
+		fp = fopen("saida.txt", "w");
 		sec = fat_list[i].first_sector;
 		while(fat_ent[sec].eof != TRUE){
 			oneToThree(sec, cyl_trk_sec);
 			while((j < 512)&&(!feof(fp))){
 				if(!feof(fp)){
-					fprintf(fp, "%c", cylinder[cyl_trk_sec[0]].track[cyl_trk_sec[1]].sector[cyl_trk_sec[2]].bytes_s[j]);
+					fprintf(fp, "%c", cylinder[cyl_trk_sec[0]]
+					.track[cyl_trk_sec[1]].sector[cyl_trk_sec[2]].bytes_s[j]);
 					j++;
 				}
 			}
@@ -238,11 +234,11 @@ void escreverArquivo(char file_name[], track_array *cylinder){
 	double cluster_needed;
 	double fp_size;
 	int cyl_trk_sec[] = {0, 0, 0};
-	int pos_inicial, i;
+	int pos_inicial, i, written_sector = 0, j, next_sector, actual_sector;
 
 	fp = fopen(file_name, "r+");
 	fp_size = sizeOfFile();
-	printf("Tamanho do Arquivo digitado: %f bytes\n", fp_size);
+	printf("Tamanho do Arquivo digitado: %.0f bytes\n", fp_size);
 	cluster_needed = ceil(fp_size / (CLUSTER * 512));
 	printf("O arquivo necessitará de %.0lf clusters\n", cluster_needed);
 	fclose(fp);
@@ -250,22 +246,53 @@ void escreverArquivo(char file_name[], track_array *cylinder){
 	allocFatList(file_name, pos_inicial);
 	oneToThree(pos_inicial, cyl_trk_sec);
 
-
 	fp = fopen(file_name, "r+");
-	while(!feof(fp)){
-		if(!feof(fp)){
-			allocFatEnt(TRUE, FALSE, pos_inicial+1, pos_inicial);
-		}
+
+	while(written_sector < (cluster_needed*4)){
+		/* Conta até o written_sector chegar ao número de setores necessários
+		   multiplo de 4 */
+
+		actual_sector = pos_inicial;
+		/* Guarda o setor atual pois pos_incial se altera
+		   no decorrer do algoritmo*/
+
 		for(i = 0; i < 512; i++){
+		/* Loop para leitura do arquivo */
 			fscanf(fp, "%c", &cylinder[cyl_trk_sec[0]].track[cyl_trk_sec[1]]
 				.sector[cyl_trk_sec[2]].bytes_s[i]);
-
 		}
-		pos_inicial += 1;
-		cyl_trk_sec[2] = pos_inicial;
-	}
-	allocFatEnt(TRUE, TRUE, pos_inicial+1, pos_inicial);
+		written_sector++;
+		/* soma 1 nos setores ja escritos(tanto faz o local) */
 
+		if(written_sector % 4 == 0){
+			/*
+			Aqui eh checado se o algoritmo escreveu 1 cluster, se sim ele
+			soma 57.(57 = 60 - 4 + 1) Em que somar 60 pula para o cluster
+			de baixo e se reduz 4 para voltar ao inicio do cluster para
+			assim somar 1 Deus sabe pq.
+			*/
+			j = 0;
+			cyl_trk_sec[2] += 57;
+			while(fat_ent[cyl_trk_sec[2]].used != FALSE){
+				/* Checa se o cluster logo abaixo esta vago */
+				j++;
+				cyl_trk_sec[2]++;
+				if(j == 4){
+				/* Caso todo o cluster abaixo esta ocupado,
+				   ele pula para o de baixo */
+					cyl_trk_sec[2] += 57;
+				}
+			}
+			pos_inicial = cyl_trk_sec[2];
+		} else {
+			pos_inicial++;
+			cyl_trk_sec[2] = pos_inicial;
+		}
+
+		next_sector = pos_inicial;
+		allocFatEnt(TRUE, FALSE, next_sector, actual_sector);
+	}
+	fat_ent[actual_sector].eof = TRUE;
 }
 
 void printFatTable(){
@@ -289,6 +316,7 @@ void printFatTable(){
 			printf("%d,", sec);
 			sec = fat_ent[sec].next;
 		}
+		printf("%d,", sec);
 		printf("\n");
 		i++;
 	}
