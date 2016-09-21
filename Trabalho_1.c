@@ -335,7 +335,7 @@ void escreverArquivo(char file_name[], track_array *cylinder){
 			Aqui eh checado se o algoritmo escreveu 1 cluster, se sim ele
 			soma 57.(57 = 60 - 4 + 1) Em que somar 60 pula para o cluster
 			de baixo e se reduz 4 para voltar ao inicio do cluster para
-			assim somar 1 Deus sabe pq.
+			assim somar 1.
 			*/
 			j = 0;
 			cyl_trk_sec[2] += 57;
