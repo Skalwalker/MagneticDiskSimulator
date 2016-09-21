@@ -29,8 +29,10 @@
 #define TEMPO_TRANSF 12
 #define TRUE 1
 #define FALSE 0
+
 FILE *fp;
 int numb_files = -1;
+int total_time = 0;
 
 
 /* ------------------------------------------------------ */
@@ -212,6 +214,11 @@ int searchFatList(int cyl_trk_sec[]){
 			i = k*60;
 		}
 	}
+
+	if(i < 300){
+		total_time += SEEK_T_MEDIO * (int)(i/300);
+	}
+
  	return i;
 
 }
@@ -221,7 +228,7 @@ void readFile(char file_name[], track_array *cylinder){
 	char file_name_2[100];
 	int cyl_trk_sec[] = {0, 0, 0};
 
-	while(strcmp(fat_list[i].file_name, file_name) != 0 && (i < numb_files)){
+	while(strcmp(fat_list[i].file_name, file_name) != 0 && (i <= numb_files)){
 		i++;
 	}
 	sec = fat_list[i].first_sector;
@@ -231,7 +238,7 @@ void readFile(char file_name[], track_array *cylinder){
 		sec = fat_ent[sec].next;
 	}
 
-	if(i < numb_files){
+	if(i <= numb_files){
 		strcpy(file_name_2, fat_list[i].file_name);
 		fp = fopen(file_name_2, "r+");
 		fp_size = sizeOfFile();
@@ -253,7 +260,6 @@ void readFile(char file_name[], track_array *cylinder){
 			}
 
 			j = 0;
-			printf("%d\n", sec);
 			sec = fat_ent[sec].next;
 			read_sector++;
 		}
@@ -290,7 +296,6 @@ void escreverArquivo(char file_name[], track_array *cylinder){
 	int cyl_trk_sec[] = {0, 0, 0};
 	int pos_inicial, i, written_sector = 0, j, next_sector, actual_sector;
 
-	system("clear || clean");
 	fp = fopen(file_name, "r+");
 	fp_size = sizeOfFile();
 
@@ -362,11 +367,9 @@ void escreverArquivo(char file_name[], track_array *cylinder){
 void deleteFile(char file_name[]){
 	int i = 0, sec;
 
-	while(strcmp(fat_list[i].file_name, file_name) != 0 && i <= numb_files){
+	while(strcmp(fat_list[i].file_name, file_name) != 0 && i < numb_files){
 		i++;
 	}
-		printf("%d\n", i);
-		printf("NUMB %d\n", numb_files);
 
 		if(strcmp(fat_list[i].file_name, file_name) != 0){
 			printf(RED "O arquivo nao existe!!\n" RESET);
