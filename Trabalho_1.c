@@ -182,6 +182,11 @@ int threeToOne(int c, int t, int s){
 /* --------------------------------- */
 /* FIM DAS FUNCOES DE CONVERSAO      */
 /* --------------------------------- */
+
+
+/* --------------------------------- */
+/* COMECO DAS FUNCOES DE SUPORTE     */
+/* --------------------------------- */
 int sizeOfFile(){
 	/*
 	Retorna o tamanho do arquivo em bytes
@@ -198,16 +203,20 @@ int sizeOfFile(){
 }
 
 
-
 int searchFatList(int cyl_trk_sec[]){
+	/*
+		Procura o valor de setor bruto usado para gravar o arquivo
+	*/
 	int i, j, k;
 	i = j = k = 0;
+	total_time = SEEK_T_MEDIO;
 
 	while(fat_ent[i].used == TRUE){
 		i++;
 		if(i % 60 == 0){
 			j++;
 			i = j*300;
+			total_time += SEEK_T_MINIMO;
 		}
 		if(i % 3000 == 0){
 			k++;
@@ -215,56 +224,8 @@ int searchFatList(int cyl_trk_sec[]){
 		}
 	}
 
-	if(i < 300){
-		total_time += SEEK_T_MEDIO * (int)(i/300);
-	}
-
  	return i;
 
-}
-
-void readFile(char file_name[], track_array *cylinder){
-	int i = 0, sec, j = 0, numb_sectors = 1, read_sector = 0, fp_size, l = 0;
-	char file_name_2[100];
-	int cyl_trk_sec[] = {0, 0, 0};
-
-	while(strcmp(fat_list[i].file_name, file_name) != 0 && (i <= numb_files)){
-		i++;
-	}
-	sec = fat_list[i].first_sector;
-
-	while(fat_ent[sec].eof == FALSE){
-		numb_sectors++;
-		sec = fat_ent[sec].next;
-	}
-
-	if(i <= numb_files){
-		strcpy(file_name_2, fat_list[i].file_name);
-		fp = fopen(file_name_2, "r+");
-		fp_size = sizeOfFile();
-	}
-
-	if(strcmp(fat_list[i].file_name, file_name) != 0){
-		printf(RED "Arquivo Inexistente\n" RESET);
-	} else {
-		fp = fopen("saida.txt", "w+");
-		sec = fat_list[i].first_sector;
-
-		while(l < fp_size){
-			oneToThree(sec, cyl_trk_sec);
-			while(j < 512 && l < fp_size){
-				fprintf(fp, "%c", cylinder[cyl_trk_sec[0]]
-			      .track[cyl_trk_sec[1]].sector[cyl_trk_sec[2]].bytes_s[j]);
-				j++;
-				l++;
-			}
-
-			j = 0;
-			sec = fat_ent[sec].next;
-			read_sector++;
-		}
-		fclose(fp);
-	}
 }
 
 void arquivoExiste(char file_name[]){
@@ -289,8 +250,18 @@ void arquivoExiste(char file_name[]){
 		}
 	}
 }
+/* --------------------------------- */
+/* FIM DAS FUNCOES DE SUPORTE        */
+/* --------------------------------- */
 
+
+/* --------------------------------- */
+/* COMECO DAS FUNCOES PRINCIPAIS     */
+/* --------------------------------- */
 void escreverArquivo(char file_name[], track_array *cylinder){
+	/*
+		Funcao para escrita do arquivo no HD
+	*/
 	double cluster_needed;
 	double fp_size;
 	int cyl_trk_sec[] = {0, 0, 0};
@@ -364,7 +335,73 @@ void escreverArquivo(char file_name[], track_array *cylinder){
 	   Melhor aqui do que com um if dentro do loop. */
 }
 
+void readFile(char file_name[], track_array *cylinder){
+	/*
+		Funcao para Leitura do arquivo
+	*/
+	int i = 0, sec, j = 0, numb_sectors = 1, read_sector = 0, fp_size, l = 0;
+	char file_name_2[100];
+	int cyl_trk_sec[] = {0, 0, 0};
+	int cls[] = {0, 0, 0}, cls2[] = {0 , 0, 0};
+
+	total_time = SEEK_T_MEDIO;
+
+	/* Enquanto nao acha o nome no arquvio na tabela fat ...*/
+	while(strcmp(fat_list[i].file_name, file_name) != 0 && (i <= numb_files)){
+		i++;
+		if(i > 1){
+			oneToThree(fat_list[i].first_sector, cls);
+			oneToThree(fat_list[i-1].first_sector, cls2);
+			if(cls[0] != cls2[0]){
+				total_time += SEEK_T_MINIMO;
+			}
+		}
+
+	}
+	sec = fat_list[i].first_sector;
+
+	/* Conta a quantidade de setores*/
+	while(fat_ent[sec].eof == FALSE){
+		numb_sectors++;
+		sec = fat_ent[sec].next;
+	}
+
+
+	if(i <= numb_files){
+		strcpy(file_name_2, fat_list[i].file_name);
+		fp = fopen(file_name_2, "r+");
+		fp_size = sizeOfFile();
+	}
+
+	/* Se o arquivo existe no Hd Salva no saida.txt */
+	if(strcmp(fat_list[i].file_name, file_name) != 0){
+		printf(RED "Arquivo Inexistente\n" RESET);
+	} else {
+		fp = fopen("saida.txt", "w+");
+		sec = fat_list[i].first_sector;
+
+		while(l < fp_size){
+			oneToThree(sec, cyl_trk_sec);
+			while(j < 512 && l < fp_size){
+				fprintf(fp, "%c", cylinder[cyl_trk_sec[0]]
+			      .track[cyl_trk_sec[1]].sector[cyl_trk_sec[2]].bytes_s[j]);
+				j++;
+				l++;
+			}
+
+			j = 0;
+			sec = fat_ent[sec].next;
+			read_sector++;
+		}
+		fclose(fp);
+	}
+}
+
 void deleteFile(char file_name[]){
+	/*
+		Funcao para deletar os arquivos.
+	*/
+
 	int i = 0, sec;
 
 	while(strcmp(fat_list[i].file_name, file_name) != 0 && i < numb_files){
@@ -419,6 +456,9 @@ void printFatTable(){
 	}
 	printf("========================================================\n");
 }
+/* --------------------------------- */
+/* FIM DAS FUNCOES DE PRINCIPAIS     */
+/* --------------------------------- */
 
 
 int menu(){
@@ -459,11 +499,16 @@ int main(){
 			arquivoExiste(file_name);
 			numb_files++;
 			escreverArquivo(file_name, cylinder);
+			printf(" - Arquivo Gravado Com Sucesso!");
+			printf("\n - Tempo de Gravação: %dms\n", total_time);
+			total_time = 0;
 		}else if(opc == 2){
 			printf("Por favor, escreva o nome do arquivo para leitura: ");
 			scanf("%s", file_name);
 			readFile(file_name, cylinder);
-
+			printf("\nArquivo Lido com Sucesso!");
+			printf("\nTempo de Leitura: %dms\n\n", total_time);
+			total_time = 0;
 		}else if(opc == 3){
 			printf("Por favor, escreva o nome do arquivo para ser deletado: ");
 			scanf("%s", file_name);
