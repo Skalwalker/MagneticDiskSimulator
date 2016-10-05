@@ -5,7 +5,7 @@
 	Prof.: Andre Drummond
 
 	Alunos:
-	- Renato Nobre 15/0146696
+	- Renato Nobre 15/0146696 - LIDER
 	- Khalil Carsten 15/0134495
 
 	Resumo da disposicao e organizacao do codigo:
@@ -216,7 +216,7 @@ int searchFatList(int cyl_trk_sec[]){
 		if(i % 60 == 0){
 			j++;
 			i = j*300;
-			total_time += SEEK_T_MINIMO;
+			total_time += T_MEDIO_LAT;
 		}
 		if(i % 3000 == 0){
 			k++;
@@ -265,6 +265,7 @@ void escreverArquivo(char file_name[], track_array *cylinder){
 	double cluster_needed;
 	double fp_size;
 	int cyl_trk_sec[] = {0, 0, 0};
+	int cyl;
 	int pos_inicial, i, written_sector = 0, j, next_sector, actual_sector;
 
 	fp = fopen(file_name, "r+");
@@ -285,6 +286,9 @@ void escreverArquivo(char file_name[], track_array *cylinder){
 
 	fp = fopen(file_name, "r+");
 
+	total_time = 0;
+
+	cyl = cyl_trk_sec[0];
 	while(written_sector < (cluster_needed*4)){
 		/* Conta até o written_sector chegar ao número de setores necessários
 		   multiplo de 4 */
@@ -308,6 +312,7 @@ void escreverArquivo(char file_name[], track_array *cylinder){
 			de baixo e se reduz 4 para voltar ao inicio do cluster para
 			assim somar 1.
 			*/
+			total_time += T_MEDIO_LAT;
 			j = 0;
 			cyl_trk_sec[2] += 57;
 			while(fat_ent[cyl_trk_sec[2]].used != FALSE){
@@ -327,6 +332,10 @@ void escreverArquivo(char file_name[], track_array *cylinder){
 			cyl_trk_sec[2] = pos_inicial;
 		}
 
+		if(cyl_trk_sec[0] != cyl){
+			total_time += T_MEDIO_LAT;
+		}
+
 		next_sector = pos_inicial;
 		allocFatEnt(TRUE, FALSE, next_sector, actual_sector);
 	}
@@ -340,6 +349,7 @@ void readFile(char file_name[], track_array *cylinder){
 		Funcao para Leitura do arquivo
 	*/
 	int i = 0, sec, j = 0, numb_sectors = 1, read_sector = 0, fp_size, l = 0;
+	int t;
 	char file_name_2[100];
 	int cyl_trk_sec[] = {0, 0, 0};
 	int cls[] = {0, 0, 0}, cls2[] = {0 , 0, 0};
@@ -349,14 +359,6 @@ void readFile(char file_name[], track_array *cylinder){
 	/* Enquanto nao acha o nome no arquvio na tabela fat ...*/
 	while(strcmp(fat_list[i].file_name, file_name) != 0 && (i <= numb_files)){
 		i++;
-		if(i > 1){
-			oneToThree(fat_list[i].first_sector, cls);
-			oneToThree(fat_list[i-1].first_sector, cls2);
-			if(cls[0] != cls2[0]){
-				total_time += SEEK_T_MINIMO;
-			}
-		}
-
 	}
 	sec = fat_list[i].first_sector;
 
@@ -379,8 +381,13 @@ void readFile(char file_name[], track_array *cylinder){
 	} else {
 		fp = fopen("saida.txt", "w+");
 		sec = fat_list[i].first_sector;
+		t = sec;
 
 		while(l < fp_size){
+			if(t+4 < sec){
+				total_time += T_MEDIO_LAT;
+				t = sec;
+			}
 			oneToThree(sec, cyl_trk_sec);
 			while(j < 512 && l < fp_size){
 				fprintf(fp, "%c", cylinder[cyl_trk_sec[0]]
