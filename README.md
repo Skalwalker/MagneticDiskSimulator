@@ -2,13 +2,13 @@
 Simulação de Disco Magnético Rígido
 
 
-##1. Objetivos
+## 1. Objetivos
 
 O objetivo deste trabalho é que o aluno aprenda a estrutura do disco magnético e como são organizados os arquivos dentro dele.
 
-##2. Especificação
+## 2. Especificação
 
-##2.1 Ambiente:
+## 2.1 Ambiente:
 
 Crie uma estrutura de dados para emular um disco magnético rígido (HD) com as seguintes características:
 
@@ -55,7 +55,7 @@ Sendo que o elemento 0 do array representa o primeiro setor da primeira trilha d
 
 O campo 'used' indica se o setor esta livre ou sendo utilizado. O campo 'eof' indica se é o último setor do arquivo. O campo 'next' indica o próximo setor do arquivo.
 
-##2.2 Software:
+## 2.2 Software:
 
 O programa deve ter como nome: 'my_drive.cpp'. E assim que for executado deve mostrar o seguinte menu:
 
